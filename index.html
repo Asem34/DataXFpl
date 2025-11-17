@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPL Player Predictions</title>
+    <!-- Include Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom class for the active tab */
+        .tab-active {
+            border-bottom-color: #3b82f6; /* blue-500 */
+            color: #3b82f6; /* blue-500 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-4 sm:p-8">
+
+    <div class="container max-w-6xl mx-auto">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-white">FPL Player Predictions</h1>
+            <p class="text-gray-400 mt-2">Data-driven insights for your fantasy team</p>
+        </header>
+
+        <!-- FILE UPLOAD SECTION REMOVED -->
+        <!-- The app will now automatically fetch 'fpl_data.csv' on load -->
+
+
+        <!-- Controls: Search and Filters (Hidden by default) -->
+        <div id="controlsContainer" class="sticky top-0 bg-gray-900 py-4 z-10 mb-6" style="display: none;">
+            <!-- Search Input -->
+            <div class="relative w-full max-w-lg mx-auto mb-6">
+                <input type="text" id="searchInput" placeholder="Search by player or team..."
+                       class="w-full bg-gray-800 border border-gray-700 text-white rounded-lg py-2.5 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                <!-- Search Icon -->
+                <svg class="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+            </div>
+            
+            <!-- Filter Tabs -->
+            <nav class="flex justify-center border-b border-gray-700">
+                <button class="filter-tab tab-active py-3 px-4 sm:px-6 font-medium text-gray-300 border-b-2 border-transparent hover:text-blue-400" data-filter="All">All</button>
+                <button class="filter-tab py-3 px-4 sm:px-6 font-medium text-gray-300 border-b-2 border-transparent hover:text-blue-400" data-filter="FWD">FWD</button>
+                <button class="filter-tab py-3 px-4 sm:px-6 font-medium text-gray-300 border-b-2 border-transparent hover:text-blue-400" data-filter="MID">MID</button>
+                <button class="filter-tab py-3 px-4 sm:px-6 font-medium text-gray-300 border-b-2 border-transparent hover:text-blue-400" data-filter="DEF">DEF</button>
+            </nav>
+        </div>
+
+        <!-- Player List Container -->
+        <div id="playerList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <!-- Initial state message -->
+            <p id="loadingMessage" class="text-gray-400 col-span-full text-center text-lg">Loading player data...</p>
+            <!-- Player cards will be injected here by JavaScript -->
+        </div>
+
+    </div>
+
+    <script>
+        // Store all player data once fetched
+        let allPlayers = [];
+        
+        // Store current UI state
+        let currentFilter = 'All';
+        let currentSearch = '';
+
+        // DOM Elements
+        const playerListEl = document.getElementById('playerList');
+        const searchInputEl = document.getElementById('searchInput');
+        const filterTabs = document.querySelectorAll('.filter-tab');
+        const loadingMessageEl = document.getElementById('loadingMessage');
+        // Removed file input elements
+        const controlsContainerEl = document.getElementById('controlsContainer');
+
+        // Define colors for each position
+        const positionColors = {
+            'FWD': 'bg-red-600 text-red-100',
+            'MID': 'bg-green-600 text-green-100',
+            'DEF': 'bg-blue-600 text-blue-100',
+            'GKP': 'bg-yellow-600 text-yellow-100' // Added GKP just in case
+        };
+
+        // 1. Handle File Selection (REMOVED)
+        // New function to fetch data on page load
+        async function fetchAndParseData() {
+            // Define the path to your CSV file.
+            // This file MUST be in the same directory as the HTML file.
+            const csvUrl = 'predicted_points.csv';
+
+            loadingMessageEl.textContent = 'Loading player data...';
+            loadingMessageEl.style.color = '#9ca3af'; // gray-400
+
+            try {
+                const response = await fetch(csvUrl);
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok (status: ${response.status})`);
+                }
+                const csvData = await response.text();
+                
+                parsePlayerData(csvData);
+                
+                // Show the search/filter controls
+                controlsContainerEl.style.display = 'block';
+                // Loading message will be hidden by renderPlayers
+
+            } catch (error) {
+                console.error('Error fetching or parsing data:', error);
+                loadingMessageEl.textContent = `Error loading data. Please ensure "fpl_data.csv" is in the same directory and is a valid CSV.`;
+                loadingMessageEl.style.color = '#ef4444'; // red-500
+            }
+        }
+
+
+        // 2. Parse CSV Data
+        function parsePlayerData(csvData) {
+            // Split by newline, filtering out any empty rows
+            const rows = csvData.split(/\r\n|\n/).filter(row => row.trim() !== '');
+            
+            if (rows.length < 2) {
+                throw new Error('No data found in CSV file.');
+            }
+            
+            // Get headers from the first row
+            const headers = rows[0].split(',').map(h => h.trim());
+
+            // Parse each subsequent row into a player object
+            allPlayers = rows.slice(1).map(row => {
+                const values = row.split(',');
+                let player = {};
+                headers.forEach((header, index) => {
+                    // Assign value, trim whitespace, or default to empty string
+                    player[header] = values[index] ? values[index].trim() : '';
+                });
+                
+                // Create a numeric version of points for sorting
+                player.Predicted_Points_Num = parseFloat(player.Predicted_Points) || 0;
+                return player;
+            });
+
+            // Sort all players by predicted points (highest first)
+            allPlayers.sort((a, b) => b.Predicted_Points_Num - a.Predicted_Points_Num);
+            
+            // Perform the initial render
+            renderPlayers();
+        }
+
+        // 3. Render Player List based on filters and search
+        function renderPlayers() {
+            // Start with the full, sorted list
+            let filteredPlayers = allPlayers;
+
+            // Apply position filter
+            if (currentFilter !== 'All') {
+                filteredPlayers = filteredPlayers.filter(p => p.position === currentFilter);
+            }
+
+            // Apply search filter
+            if (currentSearch) {
+                const searchTerm = currentSearch.toLowerCase();
+                filteredPlayers = filteredPlayers.filter(p => 
+                    (p.full_name && p.full_name.toLowerCase().includes(searchTerm)) ||
+                    (p.Team_Name && p.Team_Name.toLowerCase().includes(searchTerm))
+                );
+            }
+
+            // Clear previous list and loading message
+            playerListEl.innerHTML = '';
+            loadingMessageEl.style.display = 'none';
+
+            // Show message if no players match
+            if (filteredPlayers.length === 0) {
+                playerListEl.innerHTML = `<p class="text-gray-400 col-span-full text-center text-lg">No players match your criteria.</p>`;
+                return;
+            }
+
+            // Create and append player cards
+            filteredPlayers.forEach(player => {
+                const card = createPlayerCard(player);
+                playerListEl.appendChild(card);
+            });
+        }
+
+        // 4. Create HTML for a single player card
+        function createPlayerCard(player) {
+            const card = document.createElement('div');
+            // Styling for the card
+            card.className = 'bg-gray-800 rounded-lg shadow-lg p-4 transition-all duration-200 hover:shadow-blue-500/20 hover:scale-[1.02]';
+
+            const posColor = positionColors[player.position] || 'bg-gray-500 text-gray-100';
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <h3 class="text-lg font-bold text-white">${player.full_name || 'N/A'}</h3>
+                        <p class="text-sm text-gray-400">${player.Team_Name || 'N/A'}</p>
+                    </div>
+                    <span class="text-xs font-semibold px-2 py-1 rounded-full ${posColor}">${player.position || 'N/A'}</span>
+                </div>
+                
+                <div class="flex justify-between items-center bg-gray-700/50 rounded-md p-3 mb-3">
+                    <div class="text-center px-2">
+                        <p class="text-xs text-gray-400">Predicted</p>
+                        <p class="text-3xl font-bold text-blue-400">${player.Predicted_Points || '0.0'}</p>
+                        <p class="text-xs text-gray-400">Points</p>
+                    </div>
+                     <div class="text-center px-2">
+                        <p class="text-xs text-gray-400">vs</p>
+                        <p class="text-2xl font-bold text-white">${player.vs || 'N/A'}</p>
+                        <p class="text-xs text-gray-400">Opponent</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-center text-sm">
+                    <div>
+                        <p class="text-gray-400 text-xs uppercase">Goals</p>
+                        <p class="font-medium">${player.goals || '0.0'}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-xs uppercase">Assists</p>
+                        <p class="font-medium">${player.assists || '0.0'}</p>
+                    </div>
+                     <div>
+                        <p class="text-gray-400 text-xs uppercase">CS Prob.</p>
+                        <p class="font-medium">${player.Team_Clean_Sheet_Prob || '0.0'}</p>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        // 5. Set up Event Listeners
+        
+        // File Input (REMOVED)
+        
+        // Search input
+        searchInputEl.addEventListener('input', (e) => {
+            currentSearch = e.target.value;
+            // Debounce rendering slightly for smoother typing
+            setTimeout(renderPlayers, 100);
+        });
+
+        // Filter tabs
+        filterTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Update active class on tabs
+                filterTabs.forEach(t => t.classList.remove('tab-active'));
+                tab.classList.add('tab-active');
+                
+                // Update state and re-render
+                currentFilter = tab.dataset.filter;
+                renderPlayers();
+            });
+        });
+
+        // Initial load is now triggered by this function call
+        fetchAndParseData();
+
+    </script>
+</body>
+</html>
