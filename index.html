@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DataXFPL - Predicted Points</title>
+    <title>DataXFPL</title>
     <!-- Include Tailwind CSS from CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,9 +13,20 @@
         body {
             font-family: 'Inter', sans-serif;
         }
+        /* Custom class for the filter container to allow relative positioning */
+        #filter-tabs-container {
+            position: relative;
+        }
+        /* Style for the moving indicator (Lime Accent: #aeff00) */
+        #filter-indicator {
+            position: absolute;
+            height: 3px;
+            background-color: #aeff00;
+            bottom: 0px;
+            transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1); /* Tailwind's ease-in-out */
+        }
         /* Custom class for the active tab (Lime Accent: #aeff00) */
         .tab-active {
-            border-bottom-color: #aeff00; 
             color: #aeff00; 
         }
         /* Custom scrollbar for better look in dark mode */
@@ -48,8 +59,8 @@
         
         <header class="text-center mb-8">
             <!-- Applying custom accent color #aeff00 to the title -->
-            <h1 class="text-3xl sm:text-4xl font-bold text-[#aeff00] tracking-wider">Predicted Points Dashboard</h1>
-            <p class="text-gray-400 mt-2">Analyze player performance and clean sheet probabilities.</p>
+            <h1 class="text-3xl sm:text-4xl font-bold text-[#aeff00] tracking-wider">DataXFPL</h1>
+            <p class="text-gray-400 mt-2">Analyze player performance and clean sheet probabilities. (GW12)</p>
         </header>
 
         <!-- Search and Filter Controls -->
@@ -63,13 +74,18 @@
                        focus:border-[#aeff00] focus:ring focus:ring-[#aeff00] focus:ring-opacity-50 transition duration-150">
             </div>
 
-            <!-- Position Filters (Uses the .tab-active style) -->
-            <div id="filter-tabs" class="flex justify-center border-b border-gray-700 space-x-2 sm:space-x-4">
-                <button class="tab-item border-b-2 px-4 py-2 text-sm font-medium transition-colors tab-active" data-filter="All">All</button>
-                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="FWD">FWD</button>
-                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="MID">MID</button>
-                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="DEF">DEF</button>
-                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="GK">GK</button>
+            <!-- Position Filters with Dynamic Underline -->
+            <div id="filter-tabs-container" class="border-b border-gray-700">
+                <div id="filter-tabs" class="flex justify-center space-x-2 sm:space-x-4">
+                    <!-- Note: Removed border-b-2 from tabs, handled by indicator now -->
+                    <button class="tab-item px-4 py-2 text-sm font-medium transition-colors" data-filter="All">All</button>
+                    <button class="tab-item px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="FWD">FWD</button>
+                    <button class="tab-item px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="MID">MID</button>
+                    <button class="tab-item px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="DEF">DEF</button>
+                    <button class="tab-item px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="GK">GK</button>
+                </div>
+                <!-- Dynamic Underline Indicator -->
+                <div id="filter-indicator"></div>
             </div>
 
         </div>
@@ -93,13 +109,34 @@
         const searchInputEl = document.getElementById('search-input');
         const filterTabs = document.querySelectorAll('.tab-item');
         const loadingMessageEl = document.getElementById('loading-message');
+        const filterIndicator = document.getElementById('filter-indicator');
+        const filterTabsContainer = document.getElementById('filter-tabs');
+
+
+        /**
+         * Function to move the dynamic underline to the active tab.
+         * @param {HTMLElement} activeTab - The currently active filter button.
+         */
+        function moveIndicator(activeTab) {
+            if (!activeTab) return;
+
+            // Get positions relative to the filterTabsContainer
+            const containerRect = filterTabsContainer.getBoundingClientRect();
+            const tabRect = activeTab.getBoundingClientRect();
+
+            // Calculate the position and width for the indicator
+            const leftPosition = tabRect.left - containerRect.left;
+            const width = tabRect.width;
+
+            filterIndicator.style.left = `${leftPosition}px`;
+            filterIndicator.style.width = `${width}px`;
+        }
 
         /**
          * 1. Fetch and Parse CSV Data
          * Fetches the predicted_points.csv file and parses it into a usable array of player objects.
          */
         async function fetchAndParseData() {
-            // Using the filename as the path to fetch the CSV
             const csvFilePath = 'predicted_points.csv'; 
             
             try {
@@ -109,7 +146,6 @@
                 }
                 const csvText = await response.text();
                 
-                // Simple CSV parsing: split by line, then by comma
                 const lines = csvText.trim().split('\n');
                 if (lines.length < 2) {
                     loadingMessageEl.textContent = 'No data found in CSV file.';
@@ -121,16 +157,13 @@
                     const values = line.split(',');
                     const player = {};
                     headers.forEach((header, i) => {
-                        // Clean up headers and convert numeric fields
                         const key = header.trim();
                         let value = values[i].trim();
 
                         if (['goals', 'assists', 'Def_Con_Per_90', 'Def_Con_Bonus', 'Team_Clean_Sheet_Prob', 'Predicted_Points'].includes(key)) {
-                            // Convert string to float, handle potential NaN with 0
                             value = parseFloat(value) || 0.0;
                         }
                         
-                        // Map long names to shorter, cleaner keys for display
                         if (key === 'full_name') player.name = value;
                         else if (key === 'Team_Name') player.team = value;
                         else if (key === 'position') player.position = value;
@@ -145,7 +178,14 @@
                 });
 
                 loadingMessageEl.classList.add('hidden');
+                // Initial render and indicator placement
                 renderPlayers();
+                const initialActiveTab = document.querySelector('.tab-item[data-filter="All"]');
+                if (initialActiveTab) {
+                    initialActiveTab.classList.add('tab-active');
+                    // Use setTimeout to ensure the layout is settled before calculating position
+                    setTimeout(() => moveIndicator(initialActiveTab), 50);
+                }
 
             } catch (error) {
                 console.error('Error fetching or parsing CSV:', error);
@@ -155,26 +195,20 @@
 
         /**
          * 2. Main Rendering Logic
-         * Filters, sorts, and displays the player cards.
          */
         function renderPlayers() {
-            // 1. Filtering
             const searchLower = currentSearch.toLowerCase();
             const filteredPlayers = allPlayers
                 .filter(player => {
-                    // Filter by position (GK is now included)
                     if (currentFilter !== 'All' && player.position !== currentFilter) {
                         return false;
                     }
-                    // Filter by search term (name or team)
                     return player.name.toLowerCase().includes(searchLower) || 
                            player.team.toLowerCase().includes(searchLower);
                 });
 
-            // 2. Sorting (by Predicted_Points descending)
             const sortedPlayers = filteredPlayers.sort((a, b) => b.predictedPoints - a.predictedPoints);
 
-            // 3. Render
             resultsContainerEl.innerHTML = '';
             
             if (sortedPlayers.length === 0) {
@@ -189,8 +223,7 @@
         }
 
         /**
-         * 3. Create Player Card Element
-         * Creates an HTML div element for a single player's data.
+         * 3. Create Player Card Element (Updated Layout)
          */
         function createPlayerCard(player) {
             const card = document.createElement('div');
@@ -203,32 +236,34 @@
             else if (player.position === 'GK') positionColor = 'bg-purple-600';
             
             // Use a unified dark blue background for the card body
-            // Add custom shadow-lime-glow class for hover effect
-            card.className = `p-5 rounded-xl border border-transparent shadow-md transition-all duration-300 shadow-lime-glow bg-[#1e2738]`;
+            card.className = `p-5 rounded-xl border border-gray-700 shadow-md transition-all duration-300 shadow-lime-glow bg-[#1e2738]`;
             
             card.innerHTML = `
-                <div class="flex justify-between items-start mb-4 border-b border-gray-700 pb-3">
-                    <div>
+                <!-- TOP SECTION: Name, Team, Opponent -->
+                <div class="mb-4 border-b border-gray-700 pb-3">
+                    <div class="flex items-center justify-between mb-1">
                         <h2 class="text-2xl font-extrabold text-gray-50">${player.name}</h2>
-                        <p class="text-md font-semibold text-gray-400 mt-0.5">${player.team} <span class="text-sm text-gray-500 font-normal">vs ${player.opponent}</span></p>
+                        <span class="text-sm font-semibold text-gray-100 px-3 py-1 rounded-full ${positionColor}">${player.position}</span>
                     </div>
-                    <div class="text-right flex flex-col items-end">
-                        <p class="text-4xl font-black text-[#aeff00] leading-none">${player.predictedPoints.toFixed(2)}</p>
-                        <p class="text-xs uppercase text-gray-400 mt-1">Predicted Pts</p>
+                    <p class="text-md font-semibold text-gray-400">
+                        ${player.team} 
+                        <span class="text-sm text-gray-500 font-normal">vs ${player.opponent}</span>
+                    </p>
+                </div>
+
+                <!-- MIDDLE SECTION: Key Metrics (Predicted Pts & CS Prob) -->
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                        <p class="text-xs uppercase text-gray-400">Predicted Points</p>
+                        <p class="text-4xl font-black text-[#aeff00] leading-none mt-1">${player.predictedPoints.toFixed(2)}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs uppercase text-gray-400">Clean Sheet Prob.</p>
+                        <p class="text-4xl font-black text-[#aeff00] leading-none mt-1">${(player.csProb * 100).toFixed(1)}%</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 text-left">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-sm font-bold text-gray-400 uppercase">Position:</span>
-                        <span class="text-sm font-semibold text-gray-100 px-2 py-0.5 rounded-full ${positionColor}">${player.position}</span>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-gray-400 text-sm uppercase">Clean Sheet Prob.</p>
-                        <p class="font-bold text-lg text-[#aeff00]">${(player.csProb * 100).toFixed(1)}%</p>
-                    </div>
-                </div>
-
+                <!-- BOTTOM SECTION: Raw Stats -->
                 <div class="grid grid-cols-3 gap-2 text-center border-t border-gray-700 pt-3 mt-4">
                     <div>
                         <p class="text-gray-400 text-xs uppercase">Goals</p>
@@ -261,14 +296,26 @@
         // Filter tabs
         filterTabs.forEach(tab => {
             tab.addEventListener('click', () => {
-                // Update active class on tabs
+                // 1. Update active class
                 filterTabs.forEach(t => t.classList.remove('tab-active'));
                 tab.classList.add('tab-active');
+
+                // 2. Move the indicator
+                moveIndicator(tab);
                 
-                // Update state and re-render
+                // 3. Update state and re-render players
                 currentFilter = tab.dataset.filter;
                 renderPlayers();
             });
+        });
+
+        // Also move the indicator on window resize for responsiveness
+        window.addEventListener('resize', () => {
+            const activeTab = document.querySelector('.tab-item.tab-active');
+            if (activeTab) {
+                 // Use setTimeout to ensure the layout is settled after resize
+                setTimeout(() => moveIndicator(activeTab), 50);
+            }
         });
 
         // Initial load is triggered here
