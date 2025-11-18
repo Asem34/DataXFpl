@@ -245,26 +245,22 @@
             const isAttacking = player.position === 'FWD' || player.position === 'MID';
 
             if (isAttacking) {
-                // Layout for FWD and MID: Goals moved to key metrics, 3 columns
+                // Layout for FWD and MID: CS Prob. moved to raw stats, 2 columns for key metrics
                 middleSectionHTML = `
-                    <div class="grid grid-cols-3 gap-3 text-center">
+                    <div class="grid grid-cols-2 gap-4 text-center">
                         <div>
-                            <p class="text-xs uppercase text-gray-400">Predicted Pts</p>
-                            <p class="text-3xl sm:text-4xl font-black text-[#aeff00] leading-none mt-1">${player.predictedPoints.toFixed(2)}</p>
+                            <p class="text-xs uppercase text-gray-400">Predicted Points</p>
+                            <p class="text-4xl font-black text-[#aeff00] leading-none mt-1">${player.predictedPoints.toFixed(2)}</p>
                         </div>
                         <div>
                             <p class="text-xs uppercase text-gray-400">Goals</p>
-                            <p class="text-3xl sm:text-4xl font-black text-[#aeff00] leading-none mt-1">${player.goals.toFixed(2)}</p>
-                        </div>
-                        <div>
-                            <p class="text-xs uppercase text-gray-400">CS Prob.</p>
-                            <p class="text-3xl sm:text-4xl font-black text-[#aeff00] leading-none mt-1">${(player.csProb * 100).toFixed(1)}%</p>
+                            <p class="text-4xl font-black text-[#aeff00] leading-none mt-1">${player.goals.toFixed(2)}</p>
                         </div>
                     </div>
                 `;
-                // Remaining raw stats: Assists and Def. Cons.
+                // Remaining raw stats: Assists, Def. Cons., and CS Prob. (3 columns)
                 bottomSectionHTML = `
-                    <div class="grid grid-cols-2 gap-4 text-center border-t border-gray-700 pt-3 mt-4">
+                    <div class="grid grid-cols-3 gap-2 text-center border-t border-gray-700 pt-3 mt-4">
                         <div>
                             <p class="text-gray-400 text-xs uppercase">Assists</p>
                             <p class="font-semibold text-lg">${player.assists.toFixed(2)}</p>
@@ -272,6 +268,10 @@
                         <div>
                             <p class="text-gray-400 text-xs uppercase">Def. Cons.</p>
                             <p class="font-semibold text-lg">${player.Def_Con_Per_90.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 text-xs uppercase">CS Prob.</p>
+                            <p class="font-semibold text-lg">${(player.csProb * 100).toFixed(1)}%</p>
                         </div>
                     </div>
                 `;
