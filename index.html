@@ -60,7 +60,7 @@
         <header class="text-center mb-8">
             <!-- Applying custom accent color #aeff00 to the title -->
             <h1 class="text-3xl sm:text-4xl font-bold text-[#aeff00] tracking-wider">DataXFPL</h1>
-            <p class="text-gray-400 mt-2">Analyze player performance and clean sheet probabilities. (GW12)</p>
+            <p class="text-gray-400 mt-2">Analyze player performance and predicted points. (GW12)</p>
         </header>
 
         <!-- Search and Filter Controls -->
@@ -223,7 +223,7 @@
         }
 
         /**
-         * 3. Create Player Card Element (Updated Layout)
+         * 3. Create Player Card Element (Updated Layout with conditional logic)
          */
         function createPlayerCard(player) {
             const card = document.createElement('div');
@@ -238,6 +238,77 @@
             // Use a unified dark blue background for the card body
             card.className = `p-5 rounded-xl border border-gray-700 shadow-md transition-all duration-300 shadow-lime-glow bg-[#1e2738]`;
             
+            // --- Conditional Layout Generation ---
+            let middleSectionHTML = '';
+            let bottomSectionHTML = '';
+
+            const isAttacking = player.position === 'FWD' || player.position === 'MID';
+
+            if (isAttacking) {
+                // Layout for FWD and MID: Goals moved to key metrics, 3 columns
+                middleSectionHTML = `
+                    <div class="grid grid-cols-3 gap-3 text-center">
+                        <div>
+                            <p class="text-xs uppercase text-gray-400">Predicted Pts</p>
+                            <p class="text-3xl sm:text-4xl font-black text-[#aeff00] leading-none mt-1">${player.predictedPoints.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase text-gray-400">Goals</p>
+                            <p class="text-3xl sm:text-4xl font-black text-[#aeff00] leading-none mt-1">${player.goals.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase text-gray-400">CS Prob.</p>
+                            <p class="text-3xl sm:text-4xl font-black text-[#aeff00] leading-none mt-1">${(player.csProb * 100).toFixed(1)}%</p>
+                        </div>
+                    </div>
+                `;
+                // Remaining raw stats: Assists and Def. Cons.
+                bottomSectionHTML = `
+                    <div class="grid grid-cols-2 gap-4 text-center border-t border-gray-700 pt-3 mt-4">
+                        <div>
+                            <p class="text-gray-400 text-xs uppercase">Assists</p>
+                            <p class="font-semibold text-lg">${player.assists.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 text-xs uppercase">Def. Cons.</p>
+                            <p class="font-semibold text-lg">${player.Def_Con_Per_90.toFixed(2)}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Layout for DEF and GK: Goals remains in raw stats, 2 columns for key metrics
+                middleSectionHTML = `
+                    <div class="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                            <p class="text-xs uppercase text-gray-400">Predicted Points</p>
+                            <p class="text-4xl font-black text-[#aeff00] leading-none mt-1">${player.predictedPoints.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs uppercase text-gray-400">Clean Sheet Prob.</p>
+                            <p class="text-4xl font-black text-[#aeff00] leading-none mt-1">${(player.csProb * 100).toFixed(1)}%</p>
+                        </div>
+                    </div>
+                `;
+                // Remaining raw stats: Goals, Assists, and Def. Cons. (Original layout)
+                bottomSectionHTML = `
+                    <div class="grid grid-cols-3 gap-2 text-center border-t border-gray-700 pt-3 mt-4">
+                        <div>
+                            <p class="text-gray-400 text-xs uppercase">Goals</p>
+                            <p class="font-semibold text-lg">${player.goals.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 text-xs uppercase">Assists</p>
+                            <p class="font-semibold text-lg">${player.assists.toFixed(2)}</p>
+                        </div>
+                        <div>
+                            <p class="text-gray-400 text-xs uppercase">Def. Cons.</p>
+                            <p class="font-semibold text-lg">${player.Def_Con_Per_90.toFixed(2)}</p>
+                        </div>
+                    </div>
+                `;
+            }
+            // --- End Conditional Layout Generation ---
+
             card.innerHTML = `
                 <!-- TOP SECTION: Name, Team, Opponent -->
                 <div class="mb-4 border-b border-gray-700 pb-3">
@@ -251,33 +322,11 @@
                     </p>
                 </div>
 
-                <!-- MIDDLE SECTION: Key Metrics (Predicted Pts & CS Prob) -->
-                <div class="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                        <p class="text-xs uppercase text-gray-400">Predicted Points</p>
-                        <p class="text-4xl font-black text-[#aeff00] leading-none mt-1">${player.predictedPoints.toFixed(2)}</p>
-                    </div>
-                    <div>
-                        <p class="text-xs uppercase text-gray-400">Clean Sheet Prob.</p>
-                        <p class="text-4xl font-black text-[#aeff00] leading-none mt-1">${(player.csProb * 100).toFixed(1)}%</p>
-                    </div>
-                </div>
+                <!-- MIDDLE SECTION: Key Metrics (CONDITIONAL) -->
+                ${middleSectionHTML}
 
-                <!-- BOTTOM SECTION: Raw Stats -->
-                <div class="grid grid-cols-3 gap-2 text-center border-t border-gray-700 pt-3 mt-4">
-                    <div>
-                        <p class="text-gray-400 text-xs uppercase">Goals</p>
-                        <p class="font-semibold text-lg">${player.goals.toFixed(2)}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-400 text-xs uppercase">Assists</p>
-                        <p class="font-semibold text-lg">${player.assists.toFixed(2)}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-400 text-xs uppercase">Def. Cons.</p>
-                        <p class="font-semibold text-lg">${player.Def_Con_Per_90.toFixed(2)}</p>
-                    </div>
-                </div>
+                <!-- BOTTOM SECTION: Raw Stats (CONDITIONAL) -->
+                ${bottomSectionHTML}
             `;
             return card;
         }
