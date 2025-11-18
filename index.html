@@ -34,6 +34,11 @@
         .player-list::-webkit-scrollbar-thumb:hover {
             background: #aeff00; 
         }
+        /* Custom Glow effect for cards on hover using the lime accent */
+        .shadow-lime-glow:hover {
+            box-shadow: 0 0 15px rgba(174, 255, 0, 0.5); 
+            border-color: #aeff00;
+        }
     </style>
 </head>
 <!-- Applying custom background color #10141f (Black, slightly blue) -->
@@ -43,37 +48,36 @@
         
         <header class="text-center mb-8">
             <!-- Applying custom accent color #aeff00 to the title -->
-            <h1 class="text-3xl sm:text-4xl font-bold text-[#aeff00]">Predicted Points Dashboard</h1>
+            <h1 class="text-3xl sm:text-4xl font-bold text-[#aeff00] tracking-wider">Predicted Points Dashboard</h1>
             <p class="text-gray-400 mt-2">Analyze player performance and clean sheet probabilities.</p>
         </header>
 
         <!-- Search and Filter Controls -->
-        <!-- Keeping this as bg-gray-800 to ensure contrast against the new background -->
-        <div class="bg-gray-800 p-6 rounded-xl shadow-lg mb-6">
+        <!-- Using a slightly brighter background for the control panel to lift it off the main background -->
+        <div class="bg-gray-800 p-6 rounded-xl shadow-2xl mb-6">
             
             <!-- Search Input -->
             <div class="mb-4">
                 <input type="text" id="search-input" placeholder="Search by player or team name..."
                        class="w-full p-3 rounded-lg bg-gray-700 text-gray-100 border border-gray-600 
-                       <!-- Applying custom accent color for focus state -->
                        focus:border-[#aeff00] focus:ring focus:ring-[#aeff00] focus:ring-opacity-50 transition duration-150">
             </div>
 
             <!-- Position Filters (Uses the .tab-active style) -->
             <div id="filter-tabs" class="flex justify-center border-b border-gray-700 space-x-2 sm:space-x-4">
                 <button class="tab-item border-b-2 px-4 py-2 text-sm font-medium transition-colors tab-active" data-filter="All">All</button>
-                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:border-gray-500 transition-colors" data-filter="FWD">FWD</button>
-                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:border-gray-500 transition-colors" data-filter="MID">MID</button>
-                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:border-gray-500 transition-colors" data-filter="DEF">DEF</button>
-                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:border-gray-500 transition-colors" data-filter="GK">GK</button>
+                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="FWD">FWD</button>
+                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="MID">MID</button>
+                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="DEF">DEF</button>
+                <button class="tab-item border-b-2 border-transparent px-4 py-2 text-sm font-medium hover:text-gray-300 transition-colors" data-filter="GK">GK</button>
             </div>
 
         </div>
 
         <!-- Results Container -->
-        <div id="results-container" class="player-list grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-h-[70vh] overflow-y-auto">
+        <div id="results-container" class="player-list grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-h-[70vh] overflow-y-auto">
             <!-- Player cards will be injected here -->
-            <div class="text-center text-gray-400 p-8" id="loading-message">Loading player data...</div>
+            <div class="col-span-full text-center text-gray-400 p-8" id="loading-message">Loading player data...</div>
         </div>
         
     </div>
@@ -191,53 +195,52 @@
         function createPlayerCard(player) {
             const card = document.createElement('div');
             
-            // Determine background color based on position for quick identification
-            let bgColorClass = 'bg-gray-800';
-            if (player.position === 'FWD') bgColorClass = 'bg-red-900/40';
-            else if (player.position === 'MID') bgColorClass = 'bg-green-900/40';
-            else if (player.position === 'DEF') bgColorClass = 'bg-blue-900/40';
-            else if (player.position === 'GK') bgColorClass = 'bg-purple-900/40';
-
-            // Apply custom accent color #aeff00 to the left border
-            card.className = `p-4 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-[1.01] border-l-4 border-[#aeff00] ${bgColorClass}`;
+            // Determine position color for the badge
+            let positionColor = 'bg-gray-500'; 
+            if (player.position === 'FWD') positionColor = 'bg-red-600';
+            else if (player.position === 'MID') positionColor = 'bg-green-600';
+            else if (player.position === 'DEF') positionColor = 'bg-blue-600';
+            else if (player.position === 'GK') positionColor = 'bg-purple-600';
+            
+            // Use a unified dark blue background for the card body
+            // Add custom shadow-lime-glow class for hover effect
+            card.className = `p-5 rounded-xl border border-transparent shadow-md transition-all duration-300 shadow-lime-glow bg-[#1e2738]`;
             
             card.innerHTML = `
-                <div class="flex justify-between items-start mb-3">
+                <div class="flex justify-between items-start mb-4 border-b border-gray-700 pb-3">
                     <div>
-                        <h2 class="text-xl font-bold text-gray-50">${player.name}</h2>
-                        <p class="text-sm text-gray-400">
-                            <span class="font-semibold text-gray-300">${player.team}</span> 
-                            <span class="ml-1 text-gray-500">vs ${player.opponent}</span>
-                        </p>
+                        <h2 class="text-2xl font-extrabold text-gray-50">${player.name}</h2>
+                        <p class="text-md font-semibold text-gray-400 mt-0.5">${player.team} <span class="text-sm text-gray-500 font-normal">vs ${player.opponent}</span></p>
                     </div>
-                    <div class="text-right">
-                        <!-- Apply custom accent color #aeff00 to Predicted Points -->
-                        <p class="text-2xl font-extrabold text-[#aeff00]">${player.predictedPoints.toFixed(2)}</p>
-                        <p class="text-xs uppercase text-gray-400 -mt-1">Pts</p>
+                    <div class="text-right flex flex-col items-end">
+                        <p class="text-4xl font-black text-[#aeff00] leading-none">${player.predictedPoints.toFixed(2)}</p>
+                        <p class="text-xs uppercase text-gray-400 mt-1">Predicted Pts</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-5 gap-2 text-center border-t border-gray-700 pt-3 mt-3">
-                    <div>
-                        <p class="text-gray-400 text-xs uppercase">Position</p>
-                        <p class="font-medium text-lg">${player.position}</p>
+                <div class="grid grid-cols-2 gap-4 text-left">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm font-bold text-gray-400 uppercase">Position:</span>
+                        <span class="text-sm font-semibold text-gray-100 px-2 py-0.5 rounded-full ${positionColor}">${player.position}</span>
                     </div>
+                    <div class="text-right">
+                        <p class="text-gray-400 text-sm uppercase">Clean Sheet Prob.</p>
+                        <p class="font-bold text-lg text-[#aeff00]">${(player.csProb * 100).toFixed(1)}%</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 text-center border-t border-gray-700 pt-3 mt-4">
                     <div>
                         <p class="text-gray-400 text-xs uppercase">Goals</p>
-                        <p class="font-medium">${player.goals.toFixed(2)}</p>
+                        <p class="font-semibold text-lg">${player.goals.toFixed(2)}</p>
                     </div>
                     <div>
                         <p class="text-gray-400 text-xs uppercase">Assists</p>
-                        <p class="font-medium">${player.assists.toFixed(2)}</p>
+                        <p class="font-semibold text-lg">${player.assists.toFixed(2)}</p>
                     </div>
                     <div>
                         <p class="text-gray-400 text-xs uppercase">Def. Cons.</p>
-                        <p class="font-medium">${player.Def_Con_Per_90.toFixed(2)}</p>
-                    </div>
-                     <div>
-                        <p class="text-gray-400 text-xs uppercase">CS Prob.</p>
-                        <!-- Apply custom accent color #aeff00 to Clean Sheet Probability -->
-                        <p class="font-medium text-[#aeff00]">${(player.csProb * 100).toFixed(1)}%</p>
+                        <p class="font-semibold text-lg">${player.Def_Con_Per_90.toFixed(2)}</p>
                     </div>
                 </div>
             `;
