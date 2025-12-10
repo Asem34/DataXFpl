@@ -87,7 +87,7 @@ Federico Chiesa,Liverpool,MID,BHA,0.29,0.14,9.44,1.5733333333333333,0.31,4.47
 Josh Acheampong,Chelsea,DEF,EVE,0.05,0.07,6.21,1.242,0.42,4.47
 Cristian Romero,Spurs,DEF,NFO,0.05,0.02,8.76,1.752,0.26,4.47
 Mikkel Damsgaard,Brentford,MID,LEE,0.14,0.2,8.79,1.4649999999999999,0.36,4.47
-Nick Pope,Newcastle,GK,SUN,0.0,0.0,0.0,0.0,0.32,4.43
+Nick Pope,Newcastle,GK,SUN,0.0,0.0,0.0,0.0,0.32,0
 Dango Ouattara,Brentford,MID,LEE,0.25,0.18,8.16,1.36,0.36,4.42
 Emiliano Buendía Stati,Aston Villa,MID,WHU,0.18,0.13,9.5,1.5833333333333333,0.33,4.41
 Lucas Digne,Aston Villa,DEF,WHU,0.03,0.12,4.63,0.9259999999999999,0.33,4.4
@@ -563,3 +563,4 @@ Cheick Doucouré,Crystal Palace,MID,MCI,0.04,0.03,0.0,0.0,0.2,0.46
 Kaden Rodney,Crystal Palace,MID,MCI,0.03,0.03,0.0,0.0,0.2,0.44
 Yves Bissouma,Spurs,MID,NFO,0.03,0.02,0.0,0.0,0.26,0.38
 Joe Knight,Brighton,MID,LIV,0.03,0.03,0.0,0.0,0.15,0.33
+
